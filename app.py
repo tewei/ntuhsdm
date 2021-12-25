@@ -20,10 +20,10 @@ handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
 
 user_data = {}
 if os.path.isfile('user_data.data'):
-    with open('user_data.data') as json_file:
+    with open('user_data.data', 'w+') as json_file:
         user_data = json.load(json_file)
 else:
-    with open('user_data.data') as json_file:
+    with open('user_data.data', 'w+') as json_file:
         json.dump(user_data, json_file)
 
 

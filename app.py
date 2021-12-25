@@ -18,16 +18,6 @@ handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
 
 
 
-user_data = {}
-if os.path.isfile('user_data.data'):
-    with open('user_data.data', 'w+') as json_file:
-        user_data = json.load(json_file)
-else:
-    with open('user_data.data', 'w+') as json_file:
-        json.dump(user_data, json_file)
-
-
-
 @app.route("/", methods=["GET", "POST"])
 def callback():
 
@@ -48,8 +38,7 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
-    profile = line_bot_api.get_profile(user_id)
-
+    profile = line_bot_api.get_profile(event.source.user_id)
     app.logger.info("### USER ID: " + profile.user_id)
     get_message = event.message.text
 

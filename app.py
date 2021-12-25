@@ -50,10 +50,10 @@ def handle_message(event):
     
     if event.message.text.lower() == "end":
         if r.get(profile.user_id) is None:
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='錯誤'))
+        else:
             r.delete(profile.user_id)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會'))
-        else:
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='錯誤'))
 
 
     # Send To Line

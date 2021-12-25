@@ -55,5 +55,6 @@ def handle_message(event):
     reply = TextSendMessage(text=f"{get_message}")
     line_bot_api.reply_message(event.reply_token, reply)
 
+    app.logger.info("### USER ID: " + profile.user_id)
     reply = TextSendMessage(text=profile.user_id)
     line_bot_api.reply_message(event.reply_token, reply)

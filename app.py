@@ -3,8 +3,7 @@ from datetime import datetime
 
 from flask import Flask, abort, request
 
-import os
-import json
+import redis
 
 # https://github.com/line/line-bot-sdk-python
 from linebot import LineBotApi, WebhookHandler
@@ -15,7 +14,7 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.environ.get("CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
-
+r = redis.from_url(os.environ.get("REDIS_URL"))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -39,13 +38,29 @@ def callback():
 def handle_message(event):
 
     profile = line_bot_api.get_profile(event.source.user_id)
-    app.logger.info("### USER ID: " + profile.user_id)
     get_message = event.message.text
 
-    # Send To Line
-    reply = TextSendMessage(text= f"{get_message}"+f"{get_message}"+profile.user_id)
-    line_bot_api.reply_message(event.reply_token, reply)
+    
+    if event.message.text.lower() == "start":
+        if r.get(profile.user_id) is None:
+            r.set(profile.user_id, 0)
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
+        else:
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='已經註冊'))
+    
+    if event.message.text.lower() == "end":
+        if r.get(profile.user_id) is None:
+            r.delete(profile.user_id)
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會'))
+        else:
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='錯誤'))
 
-    # app.logger.info("### USER ID: " + str(profile.user_id))
-    # reply = TextSendMessage(text=str(profile.user_id))
-    # line_bot_api.reply_message(event.reply_token, reply)
+
+    # Send To Line
+    reply = TextSendMessage(text= f"{get_message}")
+    line_bot_api.reply_message(event.reply_token, reply)
+    line_bot_api.push_message(profile.user_id, TextSendMessage(text='您好~~'))
+
+
+
+

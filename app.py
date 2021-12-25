@@ -18,7 +18,7 @@ handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
 def callback():
 
     if request.method == "GET":
-        return "Hello Heroku"
+        return "<h1> NTUH SDM Chatbot </h1> <h2> LINE ID: @867yrtyy </h2>"
     if request.method == "POST":
         signature = request.headers["X-Line-Signature"]
         body = request.get_data(as_text=True)

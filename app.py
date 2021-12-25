@@ -51,13 +51,13 @@ def handle_message(event):
     print("event.reply_token:", event.reply_token)
     print("event.message.text:", event.message.text)
     print("event.source.user_id:", event.source.user_id)
-
+    
     profile = line_bot_api.get_profile(event.source.user_id)
+    app.logger.info("### USER ID: " + str(profile.user_id))
     get_message = event.message.text
 
-
     # Send To Line
-    reply = TextSendMessage(text=f"{get_message}"+ str(profile.user_id))
+    reply = TextSendMessage(text= f"{get_message}"+f"{get_message}")
     line_bot_api.reply_message(event.reply_token)
 
     # app.logger.info("### USER ID: " + str(profile.user_id))

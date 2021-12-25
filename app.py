@@ -49,8 +49,8 @@ def callback():
 def handle_message(event):
 
     profile = line_bot_api.get_profile(user_id)
-    
-    app.logger.info("### USER ID: " + str(profile.user_id))
+
+    app.logger.info("### USER ID: " + profile.user_id)
     get_message = event.message.text
 
     # Send To Line

@@ -47,9 +47,14 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+
+    print("event.reply_token:", event.reply_token)
+    print("event.message.text:", event.message.text)
+    print("event.source.user_id:", event.source.user_id)
+    
+    profile = line_bot_api.get_profile(event.source.user_id)
     get_message = event.message.text
 
-    profile = line_bot_api.get_profile(user_id)
 
     # Send To Line
     reply = TextSendMessage(text=f"{get_message}")

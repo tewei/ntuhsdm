@@ -21,11 +21,12 @@ r = redis.from_url(os.environ.get("REDIS_URL"))
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
 for index, row in df.iterrows():
-    print('### row["Q"]')
+    
     r.set(f'QA:{row["N"]}:Q', row["Q"]) # question
     r.set(f'QA:{row["N"]}:A', row["A"]) # answer
     r.set(f'QA:{row["N"]}:P', row["P"]) # parent
     r.sadd(f'QA:{row["P"]}:C', row["N"]) # child
+    print('### '+r.get(f'QA:{row["N"]}:Q'))
 
 @app.route("/", methods=["GET", "POST"])
 def callback():
@@ -47,6 +48,7 @@ def gen_QA_message(state):
     message = ''
     if r.get(f'QA:{state}:Q') is None:
         message = 'OAO'
+        print(f'QA:{state}:Q')
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q')
     a_text = r.get(f'QA:{state}:A')
@@ -78,13 +80,13 @@ def handle_message(event):
     
     if event.message.text.lower() == "start":
         if r.get(profile.user_id) is None:
-            r.set(profile.user_id, str(0))
-            r.set(f'QA_state:{profile.user_id}', str(1))
+            r.set(profile.user_id, 0)
+            r.set(f'QA_state:{profile.user_id}', 1)
             print('###')
-            print(r.get(f'QA_state:{profile.user_id}'))
+            print(profile.user_id, r.get(f'QA_state:{profile.user_id}'))
 
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
-            message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))
+            message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
 
             reply = TextSendMessage(text=message)
             line_bot_api.reply_message(event.reply_token, reply)
@@ -92,7 +94,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='對話進行中'))
     
     elif r.exists(profile.user_id) and event.message.text.lower() != "end":
-        message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))
+        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
         if int(event.message.text) > 0 and int(event.message.text) <= len(c_list):
             choice = int(event.message.text)
             r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
@@ -103,7 +105,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))
+        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
         reply = TextSendMessage(text=message)
         line_bot_api.reply_message(event.reply_token, reply)
 

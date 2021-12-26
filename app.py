@@ -20,7 +20,7 @@ r = redis.from_url(os.environ.get("REDIS_URL"))
 
 with open('QA_data.csv', 'r') as csvfile:
     QA_reader = csv.reader(csvfile)
-    next(QA_reader)
+    # next(QA_reader)
     for row in QA_reader:
         r.set(f'QA:{row[0]}:Q', row[1]) # question
         r.set(f'QA:{row[0]}:A', row[2]) # answer
@@ -45,6 +45,9 @@ def callback():
 
 def gen_QA_message(state):
     message = ''
+    if r.get(f'QA:{state}:Q') is None:
+        message = 'OAO'
+        return message, [], -1
     q_text = r.get(f'QA:{state}:Q')
     a_text = r.get(f'QA:{state}:A')
     p_id = r.get(f'QA:{state}:P')
@@ -77,9 +80,10 @@ def handle_message(event):
         if r.get(profile.user_id) is None:
             r.set(profile.user_id, 0)
             r.set(f'QA_state:{profile.user_id}', 1)
+
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
-            
             message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
+
             reply = TextSendMessage(text=message)
             line_bot_api.reply_message(event.reply_token, reply)
         else:
@@ -110,6 +114,8 @@ def handle_message(event):
             r.delete(f'QA_state:{profile.user_id}')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會'))
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
+    else:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
 
     # Send To Line
     

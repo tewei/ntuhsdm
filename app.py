@@ -61,7 +61,7 @@ def gen_QA_message(state):
     else:
         c_list = list(r.smembers(f'QA:{row[3]}:C'))
         for idx, child in enumerate(c_list):
-            c_text = r.get(f'QA:{child.decode('utf-8')}:Q').decode('utf-8')
+            c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
             message += f'[{idx+1}] {c_text}' + ' %0D%0A '
 
     if(p_id != '0'):

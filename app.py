@@ -82,7 +82,7 @@ def handle_message(event):
 
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
             message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))
-            
+
             reply = TextSendMessage(text=message)
             line_bot_api.reply_message(event.reply_token, reply)
         else:
@@ -100,7 +100,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
+        message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))
         reply = TextSendMessage(text=message)
         line_bot_api.reply_message(event.reply_token, reply)
 

@@ -5,6 +5,7 @@ import csv
 
 from flask import Flask, abort, request
 import redis
+import pandas as pd
 
 # https://github.com/line/line-bot-sdk-python
 from linebot import LineBotApi, WebhookHandler
@@ -18,14 +19,12 @@ handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
 r = redis.from_url(os.environ.get("REDIS_URL"))
 
 
-with open('QA_data.csv', 'r') as csvfile:
-    QA_reader = csv.reader(csvfile)
-    # next(QA_reader)
-    for row in QA_reader:
-        r.set(f'QA:{row[0]}:Q', row[1]) # question
-        r.set(f'QA:{row[0]}:A', row[2]) # answer
-        r.set(f'QA:{row[0]}:P', row[3]) # parent
-        r.sadd(f'QA:{row[3]}:C', row[0]) # child
+df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
+for index, row in df.iterrows():
+    r.set(f'QA:{row['N']}:Q', row['Q']) # question
+    r.set(f'QA:{row['N']]}:A', row['A']) # answer
+    r.set(f'QA:{row['N']}:P', row['P']) # parent
+    r.sadd(f'QA:{row['P']}:C', row['N']) # child
 
 @app.route("/", methods=["GET", "POST"])
 def callback():

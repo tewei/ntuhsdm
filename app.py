@@ -54,7 +54,7 @@ def gen_QA_message(state):
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
-    message = q_text + ' %0D%0A ' + a_text + ' %0D%0A '
+    message = q_text + ' \\n ' + a_text + ' \\n '
     c_list = []
     if r.smembers(f'QA:{row[3]}:C') is None:
         pass
@@ -62,11 +62,11 @@ def gen_QA_message(state):
         c_list = list(r.smembers(f'QA:{row[3]}:C'))
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
-            message += f'[{idx+1}] {c_text}' + ' %0D%0A '
+            message += f'[{idx+1}] {c_text}' + ' \\n '
 
     if(p_id != '0'):
-        message += '[9] 回到上個話題' + ' %0D%0A '
-    message += 'end 結束本次對話' + ' %0D%0A '
+        message += '[9] 回到上個話題' + ' \\n '
+    message += 'end 結束本次對話' + ' \\n '
 
     return message, c_list, p_id
 
@@ -86,7 +86,7 @@ def handle_message(event):
             print('###')
             print(profile.user_id, r.get(f'QA_state:{profile.user_id}'))
 
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎!!!'))
             message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
 
             reply = TextSendMessage(text=message)
@@ -102,7 +102,7 @@ def handle_message(event):
         elif int(event.message.text) == 9 and p_id != '0':
             r.set(f'QA_state:{profile.user_id}', p_id)
         else:
-            reply = TextSendMessage(text= f"麻煩再選一次唷")
+            reply = TextSendMessage(text= f"麻煩再選一次唷~")
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
@@ -112,15 +112,15 @@ def handle_message(event):
 
     elif event.message.text.lower() == "end":
         if r.get(profile.user_id) is None:
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='QQ'))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='QAQ'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話^^'))
         else:
             r.delete(profile.user_id)
             r.delete(f'QA_state:{profile.user_id}')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會'))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話^^'))
     else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話^^'))
 
     # Send To Line
     

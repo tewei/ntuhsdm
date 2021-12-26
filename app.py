@@ -78,14 +78,15 @@ def handle_message(event):
             r.set(profile.user_id, 0)
             r.set(f'QA_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
-            message, c_list, p_id = r.get(f'QA_state:{profile.user_id}')
+            
+            message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
             reply = TextSendMessage(text=message)
             line_bot_api.reply_message(event.reply_token, reply)
         else:
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='對話進行中'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='對話進行中'))
     
     elif r.exists(profile.user_id) and event.message.text.lower() != "end":
-        message, c_list, p_id = r.get(f'QA_state:{profile.user_id}')
+        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
         if int(event.message.text) > 0 and int(event.message.text) <= len(c_list):
             choice = int(event.message.text)
             r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
@@ -96,18 +97,19 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        message, c_list, p_id = r.get(f'QA_state:{profile.user_id}')
+        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}'))
         reply = TextSendMessage(text=message)
         line_bot_api.reply_message(event.reply_token, reply)
 
     elif event.message.text.lower() == "end":
         if r.get(profile.user_id) is None:
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='QQ'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
         else:
             r.delete(profile.user_id)
             r.delete(f'QA_state:{profile.user_id}')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會'))
-
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：start 開始對話'))
 
     # Send To Line
     

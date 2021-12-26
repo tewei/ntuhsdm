@@ -21,10 +21,10 @@ r = redis.from_url(os.environ.get("REDIS_URL"))
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
 for index, row in df.iterrows():
-    r.set(f'QA:{row['N']}:Q', row['Q']) # question
-    r.set(f'QA:{row['N']}:A', row['A']) # answer
-    r.set(f'QA:{row['N']}:P', row['P']) # parent
-    r.sadd(f'QA:{row['P']}:C', row['N']) # child
+    r.set(f'QA:{row["N"]}:Q', row["Q"]) # question
+    r.set(f'QA:{row["N"]}:A', row["A"]) # answer
+    r.set(f'QA:{row["N"]}:P', row["P"]) # parent
+    r.sadd(f'QA:{row["P"]}:C', row["N"]) # child
 
 @app.route("/", methods=["GET", "POST"])
 def callback():

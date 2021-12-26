@@ -54,19 +54,19 @@ def gen_QA_message(state):
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
-    message = q_text + ' \\n ' + a_text + ' \\n '
+    message = q_text + ' \n ' + a_text + ' \n '
     c_list = []
-    if r.smembers(f'QA:{row[3]}:C') is None:
+    if r.smembers(f'QA:{state}:C') is None:
         pass
     else:
-        c_list = list(r.smembers(f'QA:{row[3]}:C'))
+        c_list = list(r.smembers(f'QA:{state}:C'))
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
-            message += f'[{idx+1}] {c_text}' + ' \\n '
+            message += f'[{idx+1}] {c_text}' + ' \n '
 
     if(p_id != '0'):
-        message += '[9] 回到上個話題' + ' \\n '
-    message += 'end 結束本次對話' + ' \\n '
+        message += '[9] 回到上個話題' + ' \n '
+    message += 'end 結束本次對話' + ' \n '
 
     return message, c_list, p_id
 

@@ -137,7 +137,7 @@ def handle_sticker_message(event):
     print("package_id:", event.message.package_id)
     print("sticker_id:", event.message.sticker_id)
     # ref. https://developers.line.me/media/messaging-api/sticker_list.pdf
-    sticker_ids = [(11538, 51626494), (11538, 51626499), (11538, 51626500), (11538, 51626501), (11539, 52114110), (11539, 52114113), (11538, 52114115), (11539, 52114122), (11539, 52114123), (11539, 52114129), (11539, 52114118), (11539, 52114131), (11539, 52114117)]
+    sticker_ids = [(11538, 51626494), (11538, 51626499), (11538, 51626501), (11538, 52114115), (11539, 52114122), (11539, 52114129), (11539, 52114118), (11539, 52114131), (11537, 52002734), (11537, 52002738), (11537, 52002768), (11537, 52002735)]
     index_id = random.randint(0, len(sticker_ids) - 1)
     sticker_message = StickerSendMessage(package_id=str(sticker_ids[index_id][0]), sticker_id=str(sticker_ids[index_id][1]))
     line_bot_api.reply_message(event.reply_token, sticker_message)

@@ -1,10 +1,10 @@
 import os
 from datetime import datetime
+import random
+import csv
 
 from flask import Flask, abort, request
-
 import redis
-import csv
 
 # https://github.com/line/line-bot-sdk-python
 from linebot import LineBotApi, WebhookHandler

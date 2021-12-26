@@ -21,6 +21,7 @@ r = redis.from_url(os.environ.get("REDIS_URL"))
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
 for index, row in df.iterrows():
+    print('### row["Q"]')
     r.set(f'QA:{row["N"]}:Q', row["Q"]) # question
     r.set(f'QA:{row["N"]}:A', row["A"]) # answer
     r.set(f'QA:{row["N"]}:P', row["P"]) # parent
@@ -79,6 +80,8 @@ def handle_message(event):
         if r.get(profile.user_id) is None:
             r.set(profile.user_id, str(0))
             r.set(f'QA_state:{profile.user_id}', str(1))
+            print('###')
+            print(r.get(f'QA_state:{profile.user_id}'))
 
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎'))
             message, c_list, p_id = gen_QA_message(str(r.get(f'QA_state:{profile.user_id}')))

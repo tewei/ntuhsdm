@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.environ.get("CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
-r = redis.Redis(os.environ.get("REDIS_URL"), charset="utf-8", decode_responses=True)
+r = redis.from_url(os.environ.get("REDIS_URL"))
 
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
@@ -26,7 +26,8 @@ for index, row in df.iterrows():
     r.set(f'QA:{row["N"]}:A', row["A"]) # answer
     r.set(f'QA:{row["N"]}:P', row["P"]) # parent
     r.sadd(f'QA:{row["P"]}:C', row["N"]) # child
-    print('### '+r.get(f'QA:{row["N"]}:Q'))
+    print('### '+row["N"])
+    print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
 
 @app.route("/", methods=["GET", "POST"])
 def callback():
@@ -48,7 +49,7 @@ def gen_QA_message(state):
     message = ''
     if r.get(f'QA:{state}:Q') is None:
         message = 'OAO'
-        print(f'QA:{state}:Q')
+        print()
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q')
     a_text = r.get(f'QA:{state}:A')

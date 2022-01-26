@@ -78,7 +78,7 @@ def gen_QA_carousel(state):
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
-    text_message = 'Q: '+ q_text + ' A: ' + a_text
+    text_message = 'Q: '+ q_text + '\n A: ' + a_text
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
    
     selection_list = []
@@ -145,7 +145,7 @@ def handle_message(event):
         # reply = TextSendMessage(text=message)
         # line_bot_api.reply_message(event.reply_token, reply)
 
-        carousel_template, text_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        carousel_template, text_message = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
         line_bot_api.push_message(profile.user_id, TextSendMessage(text=text_message))
         line_bot_api.reply_message(event.reply_token, carousel_template)
 

@@ -78,7 +78,7 @@ def gen_QA_carousel(state):
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
-    text_message = 'Q: '+ q_text + '\n A: ' + a_text
+    text_message = 'Q: '+ q_text + '\nA: ' + a_text
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
    
     selection_list = []
@@ -179,6 +179,45 @@ def handle_message(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, buttons_template)
+    elif event.message.text.lower() == "86":
+        carousel_template = TemplateSendMessage(
+            alt_text='Carousel template',
+            template=CarouselTemplate(
+                columns=[
+                    CarouselColumn(
+                        title='this is menu1',
+                        text='description1',
+                        actions=[
+                            PostbackTemplateAction(
+                                label='postback1',
+                                text='postback text1',
+                                data='action=buy&itemid=1'
+                            ),
+                            MessageTemplateAction(
+                                label='message1',
+                                text='message text1'
+                            )
+                        ]
+                    ),
+                    CarouselColumn(
+                        title='this is menu2',
+                        text='description2',
+                        actions=[
+                            PostbackTemplateAction(
+                                label='postback2',
+                                text='postback text2',
+                                data='action=buy&itemid=2'
+                            ),
+                            MessageTemplateAction(
+                                label='message2',
+                                text='message text2'
+                            )
+                        ]
+                    )
+                ]
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, carousel_template)    
     
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))

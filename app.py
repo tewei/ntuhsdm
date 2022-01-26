@@ -95,7 +95,7 @@ def gen_QA_carousel(state):
         selection_list.append(['[9] 回到上個話題', 9])
     selection_list.append(['[88] 結束本次對話', 88])
     
-    column_list = [CarouselColumn(actions=[MessageTemplateAction(label=btn[0],text=btn[1])]) for btn in selection_list]
+    column_list = [CarouselColumn(title=btn[1], text=btn[0], actions=[MessageTemplateAction(label=btn[1], text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
         alt_text='Carousel template',
@@ -146,8 +146,9 @@ def handle_message(event):
         # line_bot_api.reply_message(event.reply_token, reply)
 
         carousel_template, text_message = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        line_bot_api.push_message(profile.user_id, TextSendMessage(text=text_message))
-        line_bot_api.reply_message(event.reply_token, carousel_template)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
+        line_bot_api.push_message(profile.user_id, carousel_template)
+        
 
     elif event.message.text.lower() == "88":
         if r.get(profile.user_id) is None:

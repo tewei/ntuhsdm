@@ -93,7 +93,7 @@ def gen_QA_button(state):
     if(p_id != '0'):
         button_list.append(['[9] 回到上個話題', 9])
     button_list.append(['[88] 結束本次對話', 88])
-
+    action_list = [MessageTemplateAction(label=btn[0], text=str(btn[1])) for btn in button_list]
     
     buttons_template = TemplateSendMessage(
         alt_text='Buttons Template',
@@ -101,12 +101,10 @@ def gen_QA_button(state):
             title=q_text,
             text=a_text,
             # thumbnail_image_url=image_url,
-            actions=[
-                MessageTemplateAction(label=btn[0], text=f'{btn[1]}') for idx, btn in enumerate(button_list)
-            ]
+            actions=action_list
         )
     )
-    print(button_list)
+    print(action_list, q_text, a_text, button_list)
     return buttons_template
 
 

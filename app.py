@@ -106,6 +106,7 @@ def gen_QA_button(state):
             ]
         )
     )
+    print(button_list)
     return buttons_template
 
 
@@ -146,7 +147,7 @@ def handle_message(event):
         # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
         # reply = TextSendMessage(text=message)
         # line_bot_api.reply_message(event.reply_token, reply)
-        
+
         buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
         line_bot_api.reply_message(event.reply_token, buttons_template_message)
 

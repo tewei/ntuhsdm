@@ -95,7 +95,7 @@ def gen_QA_carousel(state):
         selection_list.append(['回到上個話題', 9])
     selection_list.append(['結束本次對話', 88])
     
-    column_list = [CarouselColumn(title=f'# {btn[1]}', text=btn[0], actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
+    column_list = [CarouselColumn(title=f'[{btn[1]}] {btn[0]}', text=' ', actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
         alt_text='選擇',
@@ -128,7 +128,7 @@ def get_flex_contents(title, text):
                    "layout": "vertical",
                    "spacing": "md",
                    "contents": [
-                       {"type": "text", "text": text, "adjustMode": "shrink-to-fit"}
+                       {"type": "text", "text": text, "wrap": True}
                    ]
                }
             #    "footer": {

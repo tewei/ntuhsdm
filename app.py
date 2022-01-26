@@ -102,7 +102,7 @@ def gen_QA_button(state):
             text=a_text,
             # thumbnail_image_url=image_url,
             actions=[
-                MessageTemplateAction(label=btn[0], text=f'{btn[1]}') for btn in enumerate(button_list)
+                MessageTemplateAction(label=btn[0], text=f'{btn[1]}') for idx, btn in enumerate(button_list)
             ]
         )
     )
@@ -144,12 +144,12 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        reply = TextSendMessage(text=message)
-        line_bot_api.reply_message(event.reply_token, reply)
+        # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        # reply = TextSendMessage(text=message)
+        # line_bot_api.reply_message(event.reply_token, reply)
 
-        # buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        # line_bot_api.reply_message(event.reply_token, buttons_template_message)
+        buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        line_bot_api.reply_message(event.reply_token, buttons_template_message)
 
     elif event.message.text.lower() == "88":
         if r.get(profile.user_id) is None:

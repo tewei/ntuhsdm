@@ -144,12 +144,12 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        # reply = TextSendMessage(text=message)
-        # line_bot_api.reply_message(event.reply_token, reply)
+        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        reply = TextSendMessage(text=message)
+        line_bot_api.reply_message(event.reply_token, reply)
 
-        buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        line_bot_api.reply_message(event.reply_token, buttons_template_message)
+        # buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        # line_bot_api.reply_message(event.reply_token, buttons_template_message)
 
     elif event.message.text.lower() == "88":
         if r.get(profile.user_id) is None:
@@ -160,6 +160,32 @@ def handle_message(event):
             r.delete(f'QA_state:{profile.user_id}')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~'))
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
+    elif event.message.text.lower() == "87":
+        buttons_template = TemplateSendMessage(
+            alt_text='Buttons Template',
+            template=ButtonsTemplate(
+                title='這是ButtonsTemplate',
+                text='ButtonsTemplate可以傳送text,uri',
+                thumbnail_image_url='顯示在開頭的大圖片網址',
+                actions=[
+                    MessageTemplateAction(
+                        label='ButtonsTemplate',
+                        text='ButtonsTemplate'
+                    ),
+                    URITemplateAction(
+                        label='VIDEO1',
+                        uri='影片網址'
+                    ),
+                    PostbackTemplateAction(
+                        label='postback',
+                        text='postback text',
+                        data='postback1'
+                    )
+                ]
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, buttons_template)
+    
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
 

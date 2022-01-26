@@ -88,7 +88,8 @@ def gen_QA_button(state):
         c_list = list(r.smembers(f'QA:{state}:C'))
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
-            button_list.append([f'[{idx+1}] {c_text}', idx+1])
+            # button_list.append([f'[{idx+1}] {c_text}', idx+1])
+            button_list.append([idx+1, idx+1])
 
     if(p_id != '0'):
         button_list.append(['[9] 回到上個話題', 9])

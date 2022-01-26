@@ -70,7 +70,44 @@ def gen_QA_message(state):
 
     return message, c_list, p_id
 
+def gen_QA_button(state):
+
+    message = ''
+    if r.get(f'QA:{state}:Q') is None:
+        message = 'OAO'
+        print(f'QA:{state}:Q')
+        return message, [], -1
+    q_text = r.get(f'QA:{state}:Q').decode('utf-8')
+    a_text = r.get(f'QA:{state}:A').decode('utf-8')
+    p_id = r.get(f'QA:{state}:P').decode('utf-8')
+   
+    button_list = []
+    if r.smembers(f'QA:{state}:C') is None:
+        pass
+    else:
+        c_list = list(r.smembers(f'QA:{state}:C'))
+        for idx, child in enumerate(c_list):
+            c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
+            button_list.append([f'[{idx+1}] {c_text}', idx+1])
+
+    if(p_id != '0'):
+        button_list.append(['[9] 回到上個話題', 9])
+    button_list.append(['[88] 結束本次對話', 88])
+
     
+    buttons_template = TemplateSendMessage(
+        alt_text='Buttons Template',
+        template=ButtonsTemplate(
+            title=q_text,
+            text=a_text,
+            # thumbnail_image_url=image_url,
+            actions=[
+                MessageTemplateAction(label=btn[0], text=f'{btn[1]}') for btn in enumerate(button_list)
+            ]
+        )
+    )
+    return buttons_template
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -106,9 +143,12 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, reply)
             return
         
-        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        reply = TextSendMessage(text=message)
-        line_bot_api.reply_message(event.reply_token, reply)
+        # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        # reply = TextSendMessage(text=message)
+        # line_bot_api.reply_message(event.reply_token, reply)
+        
+        buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        line_bot_api.reply_message(event.reply_token, buttons_template_message)
 
     elif event.message.text.lower() == "88":
         if r.get(profile.user_id) is None:

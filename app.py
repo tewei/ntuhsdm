@@ -70,8 +70,7 @@ def gen_QA_message(state):
 
     return message, c_list, p_id
 
-def gen_QA_button(state):
-
+def gen_QA_carousel(state):
     message = ''
     if r.get(f'QA:{state}:Q') is None:
         message = 'OAO'
@@ -79,9 +78,10 @@ def gen_QA_button(state):
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
+    text_message = 'Q: '+ q_text + ' A: ' + a_text
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
    
-    button_list = []
+    selection_list = []
     if r.smembers(f'QA:{state}:C') is None:
         pass
     else:
@@ -89,24 +89,22 @@ def gen_QA_button(state):
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
             # button_list.append([f'[{idx+1}] {c_text}', idx+1])
-            button_list.append([idx+1, idx+1])
+            selection_list.append([f'[{idx+1}] {c_text}', idx+1])
 
     if(p_id != '0'):
-        button_list.append(['[9] 回到上個話題', 9])
-    button_list.append(['[88] 結束本次對話', 88])
-    action_list = [MessageTemplateAction(label=btn[0], text=str(btn[1])) for btn in button_list]
+        selection_list.append(['[9] 回到上個話題', 9])
+    selection_list.append(['[88] 結束本次對話', 88])
     
-    buttons_template = TemplateSendMessage(
-        alt_text='Buttons Template',
-        template=ButtonsTemplate(
-            title='A',
-            text='B',
-            # thumbnail_image_url=image_url,
-            actions=action_list
+    column_list = [CarouselColumn(actions=[MessageTemplateAction(label=btn[0],text=btn[1])]) for btn in selection_list]
+
+    carousel_template = TemplateSendMessage(
+        alt_text='Carousel template',
+        template=CarouselTemplate(
+            columns=column_list
         )
     )
-    print(action_list, q_text, a_text, button_list)
-    return buttons_template
+
+    return carousel_template, text_message
 
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -147,8 +145,9 @@ def handle_message(event):
         # reply = TextSendMessage(text=message)
         # line_bot_api.reply_message(event.reply_token, reply)
 
-        buttons_template_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        line_bot_api.reply_message(event.reply_token, buttons_template_message)
+        carousel_template, text_message = gen_QA_button(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text=text_message))
+        line_bot_api.reply_message(event.reply_token, carousel_template)
 
     elif event.message.text.lower() == "88":
         if r.get(profile.user_id) is None:

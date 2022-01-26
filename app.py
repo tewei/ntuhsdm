@@ -98,7 +98,7 @@ def gen_QA_carousel(state):
     column_list = [CarouselColumn(title=btn[0], actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
-        alt_text='Carousel template',
+        alt_text='選擇主題',
         template=CarouselTemplate(
             columns=column_list
         )

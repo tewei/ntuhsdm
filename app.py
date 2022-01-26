@@ -161,7 +161,6 @@ def handle_message(event):
 
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎!!!'))
             message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-
             reply = TextSendMessage(text=message)
             line_bot_api.reply_message(event.reply_token, reply)
         else:
@@ -184,10 +183,10 @@ def handle_message(event):
         # line_bot_api.reply_message(event.reply_token, reply)
 
         carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
         
         text_message = 'Q: '+ q_text + '\nA: ' + a_text
         contents = get_flex_contents(q_text, a_text)
+        # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
         line_bot_api.reply_message(event.reply_token,FlexSendMessage(text_message, contents))
         line_bot_api.push_message(profile.user_id, carousel_template)
         

@@ -78,7 +78,7 @@ def gen_QA_carousel(state):
         return message, [], -1
     q_text = r.get(f'QA:{state}:Q').decode('utf-8')
     a_text = r.get(f'QA:{state}:A').decode('utf-8')
-    text_message = 'Q: '+ q_text + '\nA: ' + a_text
+    # text_message = 'Q: '+ q_text + '\nA: ' + a_text
     p_id = r.get(f'QA:{state}:P').decode('utf-8')
    
     selection_list = []
@@ -95,16 +95,54 @@ def gen_QA_carousel(state):
         selection_list.append(['[9] 回到上個話題', 9])
     selection_list.append(['[88] 結束本次對話', 88])
     
-    column_list = [CarouselColumn(title=btn[0], actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
+    column_list = [CarouselColumn(title=btn[0], text='', actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
-        alt_text='選擇主題',
+        alt_text='選擇',
         template=CarouselTemplate(
             columns=column_list
         )
     )
 
-    return carousel_template, text_message
+    return carousel_template, q_text, a_text
+
+def get_flex_contents(title, text):
+    contents ={"type": "bubble",
+               "header": {
+                   "type": "box",
+                   "layout": "horizontal",
+                   "contents": [
+                       {"type": "text", "text": title, "size": "lg", "weight": "bold"}
+                    #    {"type": "text", "text": translate, "size": "lg", "color": "#888888", "align": "end", "gravity": "bottom"}
+                   ]
+               },
+            #    "hero": {
+            #        "type": "image",
+            #        "url": random_img_url,
+            #        "size": "full",
+            #        "aspect_ratio": "20:13",
+            #        "aspect_mode": "cover"
+            #    },
+               "body": {
+                   "type": "box",
+                   "layout": "vertical",
+                   "spacing": "md",
+                   "contents": [
+                       {"type": "text", "text": text, "size": "md", "weight": "bold"}
+                   ]
+               }
+            #    "footer": {
+            #        "type": "box",
+            #        "layout": "vertical",
+            #        "contents": [
+            #            {"type": "spacer", "size": "md"},
+            #            {"type": "button", "style": "primary", "color": "#1DB446",
+            #             "action": {"type": "uri", "label": "GO", "uri": random_img_url}}
+            #        ]
+            #    }
+              }
+    return contents
+
 
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -145,8 +183,12 @@ def handle_message(event):
         # reply = TextSendMessage(text=message)
         # line_bot_api.reply_message(event.reply_token, reply)
 
-        carousel_template, text_message = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
+        
+        text_message = 'Q: '+ q_text + '\nA: ' + a_text
+        contents = get_flex_contents(q_text, a_text)
+        line_bot_api.reply_message(event.reply_token,FlexSendMessage(text_message, contents))
         line_bot_api.push_message(profile.user_id, carousel_template)
         
 

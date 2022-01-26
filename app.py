@@ -99,8 +99,8 @@ def gen_QA_button(state):
     buttons_template = TemplateSendMessage(
         alt_text='Buttons Template',
         template=ButtonsTemplate(
-            title=q_text,
-            text=a_text,
+            title='A',
+            text='B',
             # thumbnail_image_url=image_url,
             actions=action_list
         )

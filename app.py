@@ -95,7 +95,7 @@ def gen_QA_carousel(state):
         selection_list.append(['[9] 回到上個話題', 9])
     selection_list.append(['[88] 結束本次對話', 88])
     
-    column_list = [CarouselColumn(title=btn[1], text=btn[0], actions=[MessageTemplateAction(label=btn[1], text=btn[1])]) for btn in selection_list]
+    column_list = [CarouselColumn(title=btn[0], text=btn[0], actions=[MessageTemplateAction(label=btn[1], text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
         alt_text='Carousel template',

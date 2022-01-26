@@ -112,7 +112,7 @@ def get_flex_contents(title, text):
                    "type": "box",
                    "layout": "horizontal",
                    "contents": [
-                       {"type": "text", "text": title, "size": "md", "weight": "bold"}
+                       {"type": "text", "text": title, "size": "md", "weight": "bold", "wrap": True}
                     #    {"type": "text", "text": translate, "size": "lg", "color": "#888888", "align": "end", "gravity": "bottom"}
                    ]
                },
@@ -126,7 +126,7 @@ def get_flex_contents(title, text):
                "body": {
                    "type": "box",
                    "layout": "vertical",
-                   "spacing": "md",
+                #    "spacing": "md",
                    "contents": [
                        {"type": "text", "text": text, "wrap": True}
                    ]

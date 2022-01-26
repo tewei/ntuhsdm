@@ -165,7 +165,7 @@ def handle_message(event):
             template=ButtonsTemplate(
                 title='這是ButtonsTemplate',
                 text='ButtonsTemplate可以傳送text,uri',
-                thumbnail_image_url='https://ntumed.github.io/images/logo01.png',
+                # thumbnail_image_url='https://ntumed.github.io/images/logo01.png',
                 actions=[
                     MessageTemplateAction(
                         label='ButtonsTemplate',

@@ -89,13 +89,13 @@ def gen_QA_carousel(state):
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
             # button_list.append([f'[{idx+1}] {c_text}', idx+1])
-            selection_list.append([f'[{idx+1}] {c_text}', idx+1])
+            selection_list.append([f'{c_text}', idx+1])
 
     if(p_id != '0'):
-        selection_list.append(['[9] 回到上個話題', 9])
-    selection_list.append(['[88] 結束本次對話', 88])
+        selection_list.append(['回到上個話題', 9])
+    selection_list.append(['結束本次對話', 88])
     
-    column_list = [CarouselColumn(title=btn[0], text='', actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
+    column_list = [CarouselColumn(title=f'# {btn[1]}', text=btn[0], actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
 
     carousel_template = TemplateSendMessage(
         alt_text='選擇',
@@ -112,7 +112,7 @@ def get_flex_contents(title, text):
                    "type": "box",
                    "layout": "horizontal",
                    "contents": [
-                       {"type": "text", "text": title, "size": "lg", "weight": "bold"}
+                       {"type": "text", "text": title, "size": "md", "weight": "bold"}
                     #    {"type": "text", "text": translate, "size": "lg", "color": "#888888", "align": "end", "gravity": "bottom"}
                    ]
                },
@@ -128,7 +128,7 @@ def get_flex_contents(title, text):
                    "layout": "vertical",
                    "spacing": "md",
                    "contents": [
-                       {"type": "text", "text": text, "size": "md", "weight": "bold"}
+                       {"type": "text", "text": text}
                    ]
                }
             #    "footer": {

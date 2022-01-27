@@ -336,19 +336,11 @@ def handle_message(event):
                 
                 line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
                 
-            elif int(event.message.text) == 9 and p_id != '0':
-                r.set(f'QA_state:{profile.user_id}', p_id)
             else:
                 reply = TextSendMessage(text= f"麻煩再選一次唷~")
                 line_bot_api.reply_message(event.reply_token, reply)
                 return
-            
-            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-            text_message = 'Q: '+ q_text + '\nA: ' + a_text
-            contents = get_flex_contents(q_text, a_text)
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
-            line_bot_api.push_message(profile.user_id, carousel_template)
+                
         elif chat_mode == 'QUIZ':
             pass
 

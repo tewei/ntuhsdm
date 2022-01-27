@@ -158,7 +158,7 @@ def gen_QUIZ_template(state):
     confirm_template_message = TemplateSendMessage(
         alt_text='Confirm template',
         template=ConfirmTemplate(
-            text=q_text,
+            text=f'# {state}/{NUM_QUIZ}題：' + q_text,
             actions=[
                 MessageAction(
                     label='O',

@@ -151,6 +151,29 @@ def gen_SDM_flex(state):
     return contents, q_text, a_text
 
 
+def gen_QUIZ_template(state):
+    q_text = r.get(f'QUIZ:{state}:Q').decode('utf-8')
+    a_text = r.get(f'QUIZ:{state}:A').decode('utf-8')
+    
+    confirm_template_message = TemplateSendMessage(
+        alt_text='Confirm template',
+        template=ConfirmTemplate(
+            text=q_text,
+            actions=[
+                MessageAction(
+                    label='O',
+                    text='O'
+                ),
+                MessageAction(
+                    label='X',
+                    text='X'
+                )
+            ]
+        )
+    )
+
+    return confirm_template_message, q_text
+
 def get_flex_contents(title, text):
     contents ={"type": "bubble",
         "header": {
@@ -227,6 +250,20 @@ def calculate_SDM_score(user_id):
     message += '\n請將本結果截圖後於診間與醫師討論，謝謝！'
     return message
 
+def calculate_QUIZscore(user_id):
+    ans_list = []
+    message = ''
+    num_correct = 0
+    for st in range(1, NUM_QUIZ+1):
+        ans = int(r.hget(f'QUIZ_ans:{user_id}', st).decode('utf-8'))
+        truth = r.get(f'QUIZ:{st}:A').decode('utf-8')
+        ans_list.append(ans)
+        if ans == truth:
+            num_correct += 1
+        message += f'第{st}題 作答：{ans} 解答：{} \n'
+        
+    message += f'\n 您的分數為 {num_correct} / {NUM_QUIZ} ！'
+    return message
 
 #新好友
 @handler.add(FollowEvent)
@@ -340,9 +377,27 @@ def handle_message(event):
                 reply = TextSendMessage(text= f"麻煩再選一次唷~")
                 line_bot_api.reply_message(event.reply_token, reply)
                 return
-                
+
         elif chat_mode == 'QUIZ':
-            pass
+            QUIZ_state = int(r.get(f'QUIZ_state:{profile.user_id}').decode('utf-8'))
+            
+            if event.message.text == 'O' or event.message.text == 'X':               
+                r.hset(f'QUIZ_ans:{profile.user_id}', QUIZ_state, event.message.text)
+                if QUIZ_state == NUM_QUIZ:
+                    # 回傳結果
+                    message = calculate_QUIZ_score(profile.user_id)
+                    contents = get_flex_contents("測驗回答結果", message)
+                    text_message = message
+                    line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+                else:
+                    r.set(f'SDM_state:{profile.user_id}', QUIZ_state + 1)
+                    quiz_template, q_text = gen_QUIZ_template(str(QUIZ_state + 1))
+                    line_bot_api.reply_message(event.reply_token, quiz_template)
+                
+            else:
+                reply = TextSendMessage(text= f"麻煩再選一次唷~")
+                line_bot_api.reply_message(event.reply_token, reply)
+                return
 
     
     # if event.message.text.lower() == "98":

@@ -21,12 +21,21 @@ r = redis.from_url(os.environ.get("REDIS_URL"))
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
 for index, row in df.iterrows():
-    
     r.set(f'QA:{row["N"]}:Q', row["Q"]) # question
     r.set(f'QA:{row["N"]}:A', row["A"]) # answer
     r.set(f'QA:{row["N"]}:P', row["P"]) # parent
     r.sadd(f'QA:{row["P"]}:C', row["N"]) # child
-    
+    print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
+
+df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/SDM_data.csv',sep=",")
+for index, row in df.iterrows():
+    r.set(f'SDM:{row["N"]}:Q', row["Q"]) # question
+    print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
+
+df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QUIZ_data.csv',sep=",")
+for index, row in df.iterrows():
+    r.set(f'QUIZ:{row["N"]}:Q', row["Q"]) # question
+    r.set(f'QUIZ:{row["N"]}:A', row["A"]) # answer
     print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
 
 @app.route("/", methods=["GET", "POST"])
@@ -70,6 +79,16 @@ def gen_QA_message(state):
 
     return message, c_list, p_id
 
+def gen_carousel(selection_list):
+    column_list = [CarouselColumn(title=f'{s[0]}', text=f'{s[1]}', actions=[MessageTemplateAction(label=f'{s[2]}', text=s[3])]) for s in selection_list]
+    carousel_template = TemplateSendMessage(
+        alt_text='請選擇',
+        template=CarouselTemplate(
+            columns=column_list
+        )
+    )
+    return carousel_template
+
 def gen_QA_carousel(state):
     message = ''
     if r.get(f'QA:{state}:Q') is None:
@@ -89,20 +108,13 @@ def gen_QA_carousel(state):
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
             # button_list.append([f'[{idx+1}] {c_text}', idx+1])
-            selection_list.append([f'{c_text}', idx+1])
+            selection_list.append([f'{c_text}', ' ', '選擇', str(idx+1)])
 
     if(p_id != '0'):
-        selection_list.append(['回到上個話題', 9])
-    selection_list.append(['結束本次對話', 88])
+        selection_list.append(['回到上個話題', ' ', '選擇', '9'])
+    selection_list.append(['結束本次對話', ' ', '選擇', 'END CHAT'])
     
-    column_list = [CarouselColumn(title=f'[{btn[1]}] {btn[0]}', text=' ', actions=[MessageTemplateAction(label='選擇', text=btn[1])]) for btn in selection_list]
-
-    carousel_template = TemplateSendMessage(
-        alt_text='選擇',
-        template=CarouselTemplate(
-            columns=column_list
-        )
-    )
+    carousel_template = gen_carousel(selection_list)
 
     return carousel_template, q_text, a_text
 
@@ -143,6 +155,31 @@ def get_flex_contents(title, text):
               }
     return contents
 
+def get_main_buttons():
+    buttons_template = TemplateSendMessage(
+        alt_text='請選擇功能^^',
+        template=ButtonsTemplate(
+            title='認識兒童尿路逆流',
+            text='您好，我是醫病共享決策chatbot，請選擇功能^^',
+            actions=[
+                MessageTemplateAction(
+                    label='問答集',
+                    text='START QA'
+                ),
+                MessageTemplateAction(
+                    label='共享決策',
+                    text='START SDM'
+                ),
+                MessageTemplateAction(
+                    label='小測驗',
+                    text='START QUIZ'
+                )
+            ]
+        )
+    )
+    return buttons_template
+@handler.add(FollowEvent)
+def handle_follow():
 
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -150,6 +187,78 @@ def handle_message(event):
 
     profile = line_bot_api.get_profile(event.source.user_id)
     # get_message = event.message.text
+
+    if r.get(profile.user_id) is None:
+        if event.message.text.lower() == "START QA":
+            r.set(profile.user_id, 'QA')
+            r.set(f'QA_state:{profile.user_id}', 1)
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
+        elif event.message.text.lower() == "START QUIZ": 
+            r.set(profile.user_id, 'QUIZ')
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
+            r.set(f'QUIZ_state:{profile.user_id}', 1)
+        elif event.message.text.lower() == "START SDM":
+            r.set(profile.user_id, 'SDM')
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
+            r.set(f'SDM_state:{profile.user_id}', 1)
+        else:
+            buttons_template = get_main_buttons()
+            line_bot_api.reply_message(profile.user_id, buttons_template)
+
+    elif event.message.text.lower() == "END CHAT":
+        chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+        if chat_mode == 'QA':
+            r.delete(f'QA_state:{profile.user_id}')
+        elif chat_mode == 'SDM':
+            r.delete(f'SDM_state:{profile.user_id}')
+        elif chat_mode == 'QUIZ':
+            r.delete(f'QUIZ_state:{profile.user_id}')
+        r.delete(profile.user_id)
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~~~'))
+        buttons_template = get_main_buttons()
+        line_bot_api.reply_message(profile.user_id, buttons_template)
+
+    elif r.exists(profile.user_id):
+        chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+        if chat_mode == 'QA':
+            message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            if int(event.message.text) > 0 and int(event.message.text) <= len(c_list):
+                choice = int(event.message.text)
+                r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
+            elif int(event.message.text) == 9 and p_id != '0':
+                r.set(f'QA_state:{profile.user_id}', p_id)
+            else:
+                reply = TextSendMessage(text= f"麻煩再選一次唷~")
+                line_bot_api.reply_message(event.reply_token, reply)
+                return
+            
+            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            text_message = 'Q: '+ q_text + '\nA: ' + a_text
+            contents = get_flex_contents(q_text, a_text)
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+            line_bot_api.push_message(profile.user_id, carousel_template)
+
+        elif chat_mode == 'SDM':
+            pass
+            message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            if int(event.message.text) > 0 and int(event.message.text) <= 5:
+                choice = int(event.message.text)
+                r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
+            elif int(event.message.text) == 9 and p_id != '0':
+                r.set(f'QA_state:{profile.user_id}', p_id)
+            else:
+                reply = TextSendMessage(text= f"麻煩再選一次唷~")
+                line_bot_api.reply_message(event.reply_token, reply)
+                return
+            
+            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            text_message = 'Q: '+ q_text + '\nA: ' + a_text
+            contents = get_flex_contents(q_text, a_text)
+            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+            line_bot_api.push_message(profile.user_id, carousel_template)
+        elif chat_mode == 'QUIZ':
+            pass
 
     
     if event.message.text.lower() == "98":
@@ -170,8 +279,6 @@ def handle_message(event):
             # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
             line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
             line_bot_api.push_message(profile.user_id, carousel_template)
-            
-
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='對話進行中'))
     
@@ -199,78 +306,108 @@ def handle_message(event):
         line_bot_api.push_message(profile.user_id, carousel_template)
         
 
-    elif event.message.text.lower() == "88":
-        if r.get(profile.user_id) is None:
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='QAQ'))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
-        else:
-            r.delete(profile.user_id)
-            r.delete(f'QA_state:{profile.user_id}')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~'))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
-    elif event.message.text.lower() == "87":
-        buttons_template = TemplateSendMessage(
-            alt_text='Buttons Template',
-            template=ButtonsTemplate(
-                title='這是ButtonsTemplate',
-                text='ButtonsTemplate可以傳送text,uri',
-                # thumbnail_image_url='https://ntumed.github.io/images/logo01.png',
-                actions=[
-                    MessageTemplateAction(
-                        label='ButtonsTemplate',
-                        text='ButtonsTemplate'
-                    ),
-                    PostbackTemplateAction(
-                        label='postback',
-                        text='postback text',
-                        data='postback1'
-                    )
-                ]
-            )
-        )
-        line_bot_api.reply_message(event.reply_token, buttons_template)
-    elif event.message.text.lower() == "86":
-        carousel_template = TemplateSendMessage(
-            alt_text='Carousel template',
-            template=CarouselTemplate(
-                columns=[
-                    CarouselColumn(
-                        title='this is menu1',
-                        text='description1',
-                        actions=[
-                            PostbackTemplateAction(
-                                label='postback1',
-                                text='postback text1',
-                                data='action=buy&itemid=1'
-                            ),
-                            MessageTemplateAction(
-                                label='message1',
-                                text='message text1'
-                            )
-                        ]
-                    ),
-                    CarouselColumn(
-                        title='this is menu2',
-                        text='description2',
-                        actions=[
-                            PostbackTemplateAction(
-                                label='postback2',
-                                text='postback text2',
-                                data='action=buy&itemid=2'
-                            ),
-                            MessageTemplateAction(
-                                label='message2',
-                                text='message text2'
-                            )
-                        ]
-                    )
-                ]
-            )
-        )
-        line_bot_api.reply_message(event.reply_token, carousel_template)    
+    # elif event.message.text.lower() == "88":
+    #     if r.get(profile.user_id) is None:
+    #         line_bot_api.push_message(profile.user_id, TextSendMessage(text='QAQ'))
+    #         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
+    #     else:
+    #         r.delete(profile.user_id)
+    #         r.delete(f'QA_state:{profile.user_id}')
+    #         line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~'))
+    #         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
+    # elif event.message.text.lower() == "87":
+    #     buttons_template = TemplateSendMessage(
+    #         alt_text='Buttons Template',
+    #         template=ButtonsTemplate(
+    #             title='這是ButtonsTemplate',
+    #             text='ButtonsTemplate可以傳送text,uri',
+    #             # thumbnail_image_url='https://ntumed.github.io/images/logo01.png',
+    #             actions=[
+    #                 MessageTemplateAction(
+    #                     label='ButtonsTemplate',
+    #                     text='ButtonsTemplate'
+    #                 ),
+    #                 PostbackTemplateAction(
+    #                     label='postback',
+    #                     text='postback text',
+    #                     data='postback1'
+    #                 )
+    #             ]
+    #         )
+    #     )
+    #     line_bot_api.reply_message(event.reply_token, buttons_template)
+    # elif event.message.text.lower() == "86":
+    #     carousel_template = TemplateSendMessage(
+    #         alt_text='Carousel template',
+    #         template=CarouselTemplate(
+    #             columns=[
+    #                 CarouselColumn(
+    #                     title='this is menu1',
+    #                     text='description1',
+    #                     actions=[
+    #                         PostbackTemplateAction(
+    #                             label='postback1',
+    #                             text='postback text1',
+    #                             data='action=buy&itemid=1'
+    #                         ),
+    #                         MessageTemplateAction(
+    #                             label='message1',
+    #                             text='message text1'
+    #                         )
+    #                     ]
+    #                 ),
+    #                 CarouselColumn(
+    #                     title='this is menu2',
+    #                     text='description2',
+    #                     actions=[
+    #                         PostbackTemplateAction(
+    #                             label='postback2',
+    #                             text='postback text2',
+    #                             data='action=buy&itemid=2'
+    #                         ),
+    #                         MessageTemplateAction(
+    #                             label='message2',
+    #                             text='message text2'
+    #                         )
+    #                     ]
+    #                 )
+    #             ]
+    #         )
+    #     )
+    #     line_bot_api.reply_message(event.reply_token, carousel_template)    
     
     else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
+        buttons_template = get_main_buttons()
+        line_bot_api.reply_message(profile.user_id, buttons_template)
+        # buttons_template = TemplateSendMessage(
+        #     alt_text='請選擇功能^^',
+        #     template=ButtonsTemplate(
+        #         title='認識兒童尿路逆流',
+        #         text='您好，我是醫病共享決策chatbot，請選擇功能^^',
+        #         # thumbnail_image_url='https://ntumed.github.io/images/logo01.png',
+        #         actions=[
+        #             MessageTemplateAction(
+        #                 label='問答集',
+        #                 text='START QA'
+        #             ),
+        #             MessageTemplateAction(
+        #                 label='共享決策',
+        #                 text='START SDM'
+        #             ),
+        #             MessageTemplateAction(
+        #                 label='小測驗',
+        #                 text='START QUIZ'
+        #             )
+        #             # PostbackTemplateAction(
+        #             #     label='postback',
+        #             #     text='postback text',
+        #             #     data='postback1'
+        #             # )
+        #         ]
+        #     )
+        # )
+        # line_bot_api.reply_message(event.reply_token, buttons_template)
+        # line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入：98 開始對話^^'))
 
     # Send To Line
     

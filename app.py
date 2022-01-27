@@ -139,8 +139,7 @@ def gen_SDM_flex(state):
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {"type": "text", "text": a_text, "wrap": True},
-                {"type": "separator"}
+                {"type": "text", "text": a_text, "wrap": True}
             ]
         },
         "footer": {
@@ -215,7 +214,7 @@ def calculate_SDM_score(user_id):
     ans_list = []
     message = ''
     for st in range(1, NUM_SDM+1):
-        score = int(r.hget(f'SDM_ans:{profile.user_id}', st).decode('utf-8'))
+        score = int(r.hget(f'SDM_ans:{user_id}', st).decode('utf-8'))
         ans_list.append(score)
         message += f'第{st}題：{score}分 \n'
     if ans_list[0]+ans_list[1]+ans_list[2]+ans_list[3] < 12:

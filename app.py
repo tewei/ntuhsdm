@@ -250,7 +250,7 @@ def calculate_SDM_score(user_id):
     message += '\n請將本結果截圖後於診間與醫師討論，謝謝！'
     return message
 
-def calculate_QUIZscore(user_id):
+def calculate_QUIZ_score(user_id):
     ans_list = []
     message = ''
     num_correct = 0
@@ -333,6 +333,8 @@ def handle_message(event):
                 r.delete(f'SDM_ans:{profile.user_id}')
         elif chat_mode == 'QUIZ':
             r.delete(f'QUIZ_state:{profile.user_id}')
+            if r.exists(f'QUIZ_ans:{profile.user_id}'):
+                r.delete(f'QUIZ_ans:{profile.user_id}')
         r.delete(profile.user_id)
         line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~~~'))
         buttons_template = get_main_buttons()
@@ -402,7 +404,6 @@ def handle_message(event):
                 reply = TextSendMessage(text= f"麻煩再選一次唷~")
                 line_bot_api.reply_message(event.reply_token, reply)
                 return
-
     
     # if event.message.text.lower() == "98":
     #     if r.get(profile.user_id) is None:

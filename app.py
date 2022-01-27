@@ -255,7 +255,7 @@ def calculate_QUIZ_score(user_id):
     message = ''
     num_correct = 0
     for st in range(1, NUM_QUIZ+1):
-        ans = int(r.hget(f'QUIZ_ans:{user_id}', st).decode('utf-8'))
+        ans = r.hget(f'QUIZ_ans:{user_id}', st).decode('utf-8')
         truth = r.get(f'QUIZ:{st}:A').decode('utf-8')
         ans_list.append(ans)
         if ans == truth:

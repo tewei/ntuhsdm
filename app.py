@@ -18,7 +18,8 @@ line_bot_api = LineBotApi(os.environ.get("CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
 r = redis.from_url(os.environ.get("REDIS_URL"))
 
-
+NUM_SDM = -1
+NUM_QUIZ = -1
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QA_data.csv',sep=",")
 for index, row in df.iterrows():
     r.set(f'QA:{row["N"]}:Q', row["Q"]) # question
@@ -30,13 +31,16 @@ for index, row in df.iterrows():
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/SDM_data.csv',sep=",")
 for index, row in df.iterrows():
     r.set(f'SDM:{row["N"]}:Q', row["Q"]) # question
+    r.set(f'SDM:{row["N"]}:A', row["A"]) # answer
     print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
+    NUM_SDM = int(row["N"])
 
 df = pd.read_csv('https://raw.githubusercontent.com/tewei/ntuhsdm/main/QUIZ_data.csv',sep=",")
 for index, row in df.iterrows():
     r.set(f'QUIZ:{row["N"]}:Q', row["Q"]) # question
     r.set(f'QUIZ:{row["N"]}:A', row["A"]) # answer
     print('### '+r.get(f'QA:{row["N"]}:Q').decode("utf-8"))
+    NUM_QUIZ = int(row["N"])
 
 @app.route("/", methods=["GET", "POST"])
 def callback():
@@ -117,6 +121,36 @@ def gen_QA_carousel(state):
     carousel_template = gen_carousel(selection_list)
 
     return carousel_template, q_text, a_text
+
+def gen_SDM_flex(state):
+    q_text = r.get(f'SDM:{state}:Q').decode('utf-8')
+    a_text = r.get(f'SDM:{state}:A').decode('utf-8')
+    choices = [{"type": "button", "style": "primary", "color": "#1DB446", "action": {"type": "message", "label": '★'*i+'☆'*(5-i), "text": i}} for i in range(1,6)]
+    choices += [{"type": "button", "style": "primary", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": 'END CHAT'}} ]
+    contents = {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {"type": "text", "text": f'# {state}/{NUM_SDM}題：' + q_text, "size": "md", "weight": "bold", "wrap": True}
+            ]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": a_text, "wrap": True}
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": choices
+        }
+    }
+    return contents, q_text, a_text
+
 
 def get_flex_contents(title, text):
     contents ={"type": "bubble",
@@ -261,11 +295,22 @@ def handle_message(event):
             line_bot_api.push_message(profile.user_id, carousel_template)
 
         elif chat_mode == 'SDM':
-            pass
-            message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            SDM_state = int(r.get(f'SDM_state:{profile.user_id}').decode('utf-8'))
+            
             if int(event.message.text) > 0 and int(event.message.text) <= 5:
                 choice = int(event.message.text)
-                r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
+                r.hset()
+                if SDM_state == 7:
+                    # 回傳結果
+                    contents = get_flex_contents("結束", "結束")
+                    text_message = "結束"
+                else:
+                    r.set(f'SDM_state:{profile.user_id}', SDM_state + 1)
+                    contents, q_text, a_text = gen_SDM_flex(str(SDM_state + 1))
+                    text_message = q_text + ' \n' + a_text
+                
+                line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+                
             elif int(event.message.text) == 9 and p_id != '0':
                 r.set(f'QA_state:{profile.user_id}', p_id)
             else:

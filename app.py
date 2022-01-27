@@ -178,10 +178,15 @@ def get_main_buttons():
         )
     )
     return buttons_template
+
+#新好友
 @handler.add(FollowEvent)
-def handle_follow():
+def handle_follow(event):
+    profile = line_bot_api.get_profile(event.source.user_id)
+    buttons_template = get_main_buttons()
+    line_bot_api.push_message(profile.user_id, buttons_template)
 
-
+#新訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
@@ -193,6 +198,13 @@ def handle_message(event):
             r.set(profile.user_id, 'QA')
             r.set(f'QA_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
+
+            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+            text_message = 'Q: '+ q_text + '\nA: ' + a_text
+            contents = get_flex_contents(q_text, a_text)
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+            line_bot_api.push_message(profile.user_id, carousel_template)
+
         elif event.message.text.lower() == "START QUIZ": 
             r.set(profile.user_id, 'QUIZ')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
@@ -203,7 +215,7 @@ def handle_message(event):
             r.set(f'SDM_state:{profile.user_id}', 1)
         else:
             buttons_template = get_main_buttons()
-            line_bot_api.reply_message(profile.user_id, buttons_template)
+            line_bot_api.reply_message(event.reply_token, buttons_template)
 
     elif event.message.text.lower() == "END CHAT":
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
@@ -216,7 +228,7 @@ def handle_message(event):
         r.delete(profile.user_id)
         line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~~~'))
         buttons_template = get_main_buttons()
-        line_bot_api.reply_message(profile.user_id, buttons_template)
+        line_bot_api.reply_message(event.reply_token, buttons_template)
 
     elif r.exists(profile.user_id):
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
@@ -261,49 +273,49 @@ def handle_message(event):
             pass
 
     
-    if event.message.text.lower() == "98":
-        if r.get(profile.user_id) is None:
-            r.set(profile.user_id, 0)
-            r.set(f'QA_state:{profile.user_id}', 1)
-            print('###')
-            print(profile.user_id, r.get(f'QA_state:{profile.user_id}'))
+    # if event.message.text.lower() == "98":
+    #     if r.get(profile.user_id) is None:
+    #         r.set(profile.user_id, 0)
+    #         r.set(f'QA_state:{profile.user_id}', 1)
+    #         print('###')
+    #         print(profile.user_id, r.get(f'QA_state:{profile.user_id}'))
 
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎!!!'))
-            # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-            # reply = TextSendMessage(text=message)
-            # line_bot_api.reply_message(event.reply_token, reply)
+    #         line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎!!!'))
+    #         # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+    #         # reply = TextSendMessage(text=message)
+    #         # line_bot_api.reply_message(event.reply_token, reply)
 
-            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-            text_message = 'Q: '+ q_text + '\nA: ' + a_text
-            contents = get_flex_contents(q_text, a_text)
-            # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
-            line_bot_api.push_message(profile.user_id, carousel_template)
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='對話進行中'))
+    #         carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+    #         text_message = 'Q: '+ q_text + '\nA: ' + a_text
+    #         contents = get_flex_contents(q_text, a_text)
+    #         # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
+    #         line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+    #         line_bot_api.push_message(profile.user_id, carousel_template)
+    #     else:
+    #         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='對話進行中'))
     
-    elif r.exists(profile.user_id) and event.message.text.lower() != "88":
-        message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        if int(event.message.text) > 0 and int(event.message.text) <= len(c_list):
-            choice = int(event.message.text)
-            r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
-        elif int(event.message.text) == 9 and p_id != '0':
-            r.set(f'QA_state:{profile.user_id}', p_id)
-        else:
-            reply = TextSendMessage(text= f"麻煩再選一次唷~")
-            line_bot_api.reply_message(event.reply_token, reply)
-            return
+    # elif r.exists(profile.user_id) and event.message.text.lower() != "88":
+    #     message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+    #     if int(event.message.text) > 0 and int(event.message.text) <= len(c_list):
+    #         choice = int(event.message.text)
+    #         r.set(f'QA_state:{profile.user_id}', c_list[choice-1])
+    #     elif int(event.message.text) == 9 and p_id != '0':
+    #         r.set(f'QA_state:{profile.user_id}', p_id)
+    #     else:
+    #         reply = TextSendMessage(text= f"麻煩再選一次唷~")
+    #         line_bot_api.reply_message(event.reply_token, reply)
+    #         return
         
-        # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        # reply = TextSendMessage(text=message)
-        # line_bot_api.reply_message(event.reply_token, reply)
+    #     # message, c_list, p_id = gen_QA_message(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+    #     # reply = TextSendMessage(text=message)
+    #     # line_bot_api.reply_message(event.reply_token, reply)
 
-        carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-        text_message = 'Q: '+ q_text + '\nA: ' + a_text
-        contents = get_flex_contents(q_text, a_text)
-        # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
-        line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
-        line_bot_api.push_message(profile.user_id, carousel_template)
+    #     carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+    #     text_message = 'Q: '+ q_text + '\nA: ' + a_text
+    #     contents = get_flex_contents(q_text, a_text)
+    #     # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=text_message))
+    #     line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+    #     line_bot_api.push_message(profile.user_id, carousel_template)
         
 
     # elif event.message.text.lower() == "88":
@@ -378,7 +390,7 @@ def handle_message(event):
     
     else:
         buttons_template = get_main_buttons()
-        line_bot_api.reply_message(profile.user_id, buttons_template)
+        line_bot_api.reply_message(event.reply_token, buttons_template)
         # buttons_template = TemplateSendMessage(
         #     alt_text='請選擇功能^^',
         #     template=ButtonsTemplate(

@@ -185,6 +185,16 @@ def handle_follow(event):
     profile = line_bot_api.get_profile(event.source.user_id)
     buttons_template = get_main_buttons()
     line_bot_api.push_message(profile.user_id, buttons_template)
+    if r.exists(profile.user_id):
+        chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+        if chat_mode == 'QA':
+            r.delete(f'QA_state:{profile.user_id}')
+        elif chat_mode == 'SDM':
+            r.delete(f'SDM_state:{profile.user_id}')
+        elif chat_mode == 'QUIZ':
+            r.delete(f'QUIZ_state:{profile.user_id}')
+        r.delete(profile.user_id)
+
 
 #新訊息
 @handler.add(MessageEvent, message=TextMessage)
@@ -194,7 +204,7 @@ def handle_message(event):
     # get_message = event.message.text
 
     if r.get(profile.user_id) is None:
-        if event.message.text.lower() == "START QA":
+        if event.message.text == "START QA":
             r.set(profile.user_id, 'QA')
             r.set(f'QA_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
@@ -205,11 +215,11 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
             line_bot_api.push_message(profile.user_id, carousel_template)
 
-        elif event.message.text.lower() == "START QUIZ": 
+        elif event.message.text == "START QUIZ": 
             r.set(profile.user_id, 'QUIZ')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
             r.set(f'QUIZ_state:{profile.user_id}', 1)
-        elif event.message.text.lower() == "START SDM":
+        elif event.message.text == "START SDM":
             r.set(profile.user_id, 'SDM')
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
             r.set(f'SDM_state:{profile.user_id}', 1)
@@ -217,7 +227,7 @@ def handle_message(event):
             buttons_template = get_main_buttons()
             line_bot_api.reply_message(event.reply_token, buttons_template)
 
-    elif event.message.text.lower() == "END CHAT":
+    elif event.message.text == "END CHAT":
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
         if chat_mode == 'QA':
             r.delete(f'QA_state:{profile.user_id}')

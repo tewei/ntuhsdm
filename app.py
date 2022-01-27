@@ -394,7 +394,7 @@ def handle_message(event):
                     text_message = message
                     line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
                 else:
-                    r.set(f'SDM_state:{profile.user_id}', QUIZ_state + 1)
+                    r.set(f'QUIZ_state:{profile.user_id}', QUIZ_state + 1)
                     quiz_template, q_text = gen_QUIZ_template(str(QUIZ_state + 1))
                     line_bot_api.reply_message(event.reply_token, quiz_template)
                 

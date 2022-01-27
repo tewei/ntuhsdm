@@ -255,8 +255,14 @@ def handle_message(event):
             r.set(f'QUIZ_state:{profile.user_id}', 1)
         elif event.message.text == "START SDM":
             r.set(profile.user_id, 'SDM')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
             r.set(f'SDM_state:{profile.user_id}', 1)
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
+            
+            contents, q_text, a_text = gen_SDM_flex('1')
+            text_message = q_text + ' \n' + a_text
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+
+
         else:
             buttons_template = get_main_buttons()
             line_bot_api.reply_message(event.reply_token, buttons_template)
@@ -299,7 +305,6 @@ def handle_message(event):
             
             if int(event.message.text) > 0 and int(event.message.text) <= 5:
                 choice = int(event.message.text)
-                r.hset()
                 if SDM_state == 7:
                     # 回傳結果
                     contents = get_flex_contents("結束", "結束")

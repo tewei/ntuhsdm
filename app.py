@@ -303,8 +303,12 @@ def handle_message(event):
 
         elif event.message.text == "START QUIZ": 
             r.set(profile.user_id, 'QUIZ')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
             r.set(f'QUIZ_state:{profile.user_id}', 1)
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
+
+            quiz_template, q_text = gen_QUIZ_template('1')
+            line_bot_api.reply_message(event.reply_token, quiz_template)
+
         elif event.message.text == "START SDM":
             r.set(profile.user_id, 'SDM')
             r.set(f'SDM_state:{profile.user_id}', 1)

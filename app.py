@@ -116,7 +116,6 @@ def gen_QA_carousel(state):
 
     if(p_id != '0'):
         selection_list.append(['回到上個話題', ' ', '選擇', '9'])
-    selection_list.append(['結束本次對話', ' ', '選擇', 'END CHAT'])
     
     carousel_template = gen_carousel(selection_list)
 
@@ -125,8 +124,8 @@ def gen_QA_carousel(state):
 def gen_SDM_flex(state):
     q_text = r.get(f'SDM:{state}:Q').decode('utf-8')
     a_text = r.get(f'SDM:{state}:A').decode('utf-8')
-    choices = [{"type": "button", "style": "primary", "color": "#1DB446", "action": {"type": "message", "label": '★'*i+'☆'*(5-i), "text": i}} for i in range(1,6)]
-    choices += [{"type": "button", "style": "primary", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": 'END CHAT'}} ]
+    choices = [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '★'*i+'☆'*(5-i), "text": i}} for i in range(1,6)]
+    choices += [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": 'END CHAT'}} ]
     contents = {
         "type": "bubble",
         "header": {
@@ -140,7 +139,8 @@ def gen_SDM_flex(state):
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {"type": "text", "text": a_text, "wrap": True}
+                {"type": "text", "text": a_text, "wrap": True},
+                {"type": "separator"}
             ]
         },
         "footer": {
@@ -154,39 +154,37 @@ def gen_SDM_flex(state):
 
 def get_flex_contents(title, text):
     contents ={"type": "bubble",
-               "header": {
-                   "type": "box",
-                   "layout": "horizontal",
-                   "contents": [
-                       {"type": "text", "text": title, "size": "md", "weight": "bold", "wrap": True}
-                    #    {"type": "text", "text": translate, "size": "lg", "color": "#888888", "align": "end", "gravity": "bottom"}
-                   ]
-               },
-            #    "hero": {
-            #        "type": "image",
-            #        "url": random_img_url,
-            #        "size": "full",
-            #        "aspect_ratio": "20:13",
-            #        "aspect_mode": "cover"
-            #    },
-               "body": {
-                   "type": "box",
-                   "layout": "vertical",
-                #    "spacing": "md",
-                   "contents": [
-                       {"type": "text", "text": text, "wrap": True}
-                   ]
-               }
-            #    "footer": {
-            #        "type": "box",
-            #        "layout": "vertical",
-            #        "contents": [
-            #            {"type": "spacer", "size": "md"},
-            #            {"type": "button", "style": "primary", "color": "#1DB446",
-            #             "action": {"type": "uri", "label": "GO", "uri": random_img_url}}
-            #        ]
-            #    }
-              }
+        "header": {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {"type": "text", "text": title, "size": "md", "weight": "bold", "wrap": True}
+            #    {"type": "text", "text": translate, "size": "lg", "color": "#888888", "align": "end", "gravity": "bottom"}
+            ]
+        },
+    #    "hero": {
+    #        "type": "image",
+    #        "url": random_img_url,
+    #        "size": "full",
+    #        "aspect_ratio": "20:13",
+    #        "aspect_mode": "cover"
+    #    },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+        #    "spacing": "md",
+            "contents": [
+                {"type": "text", "text": text, "wrap": True}
+            ]
+        },
+       "footer": {
+           "type": "box",
+           "layout": "vertical",
+           "contents": [
+               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "結束本次對話", "text": "END CHAT"}}
+           ]
+       }
+    }
     return contents
 
 def get_main_buttons():
@@ -212,6 +210,24 @@ def get_main_buttons():
         )
     )
     return buttons_template
+
+def calculate_SDM_score(user_id):
+    ans_list = []
+    message = ''
+    for st in range(1, NUM_SDM+1):
+        score = int(r.hget(f'SDM_ans:{profile.user_id}', st).decode('utf-8'))
+        ans_list.append(score)
+        message += f'第{st}題：{score}分 \n'
+    if ans_list[0]+ans_list[1]+ans_list[2]+ans_list[3] < 12:
+        message += '計算後您的偏好為「預防性抗生素治療」'
+    elif ans_list[4]+ans_list[5]+ans_list[6] < 9:
+        message += '計算後您的偏好為「玻尿酸注射」'
+    else:
+        message += '計算後您的偏好為「手術」'
+
+    message += '\n請將本結果截圖後於診間與醫師討論，謝謝！'
+    return message
+
 
 #新好友
 @handler.add(FollowEvent)
@@ -273,6 +289,8 @@ def handle_message(event):
             r.delete(f'QA_state:{profile.user_id}')
         elif chat_mode == 'SDM':
             r.delete(f'SDM_state:{profile.user_id}')
+            if r.exists(f'SDM_ans:{profile.user_id}'):
+                r.delete(f'SDM_ans:{profile.user_id}')
         elif chat_mode == 'QUIZ':
             r.delete(f'QUIZ_state:{profile.user_id}')
         r.delete(profile.user_id)
@@ -305,10 +323,13 @@ def handle_message(event):
             
             if int(event.message.text) > 0 and int(event.message.text) <= 5:
                 choice = int(event.message.text)
-                if SDM_state == 7:
+                r.hset(f'SDM_ans:{profile.user_id}', SDM_state, choice)
+                if SDM_state == NUM_SDM:
                     # 回傳結果
-                    contents = get_flex_contents("結束", "結束")
-                    text_message = "結束"
+                    message = calculate_SDM_score(profile.user_id)
+                    contents = get_flex_contents("共享決策回答結果", message)
+                    text_message = message
+                    
                 else:
                     r.set(f'SDM_state:{profile.user_id}', SDM_state + 1)
                     contents, q_text, a_text = gen_SDM_flex(str(SDM_state + 1))

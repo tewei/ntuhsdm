@@ -260,7 +260,7 @@ def calculate_QUIZscore(user_id):
         ans_list.append(ans)
         if ans == truth:
             num_correct += 1
-        message += f'第{st}題 作答：{ans} 解答：{} \n'
+        message += f'第{st}題 作答：{ans} 解答：{truth} \n'
         
     message += f'\n 您的分數為 {num_correct} / {NUM_QUIZ} ！'
     return message

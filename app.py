@@ -282,6 +282,24 @@ def handle_follow(event):
         r.delete(profile.user_id)
 
 
+
+def end_session(chat_mode, profile):
+    if chat_mode == 'QA':
+        r.delete(f'QA_state:{profile.user_id}')
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您瀏覽問答集！'))
+    elif chat_mode == 'SDM':
+        r.delete(f'SDM_state:{profile.user_id}')
+        if r.exists(f'SDM_ans:{profile.user_id}'):
+            r.delete(f'SDM_ans:{profile.user_id}')
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與尿路逆流醫病共享決策！'))
+    elif chat_mode == 'QUIZ':
+        r.delete(f'QUIZ_state:{profile.user_id}')
+        if r.exists(f'QUIZ_ans:{profile.user_id}'):
+            r.delete(f'QUIZ_ans:{profile.user_id}')
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與小測驗！'))
+    r.delete(profile.user_id)
+    line_bot_api.push_message(profile.user_id, TextSendMessage(text='若尚有不清楚的問題，請主動向醫療人員說出您的疑慮或擔心的事情！'))
+
 #新訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -289,59 +307,73 @@ def handle_message(event):
     profile = line_bot_api.get_profile(event.source.user_id)
     # get_message = event.message.text
 
-    if r.get(profile.user_id) is None:
-        if event.message.text == "開始問答集":
-            r.set(profile.user_id, 'QA')
-            r.set(f'QA_state:{profile.user_id}', 1)
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
+    # if r.get(profile.user_id) is None:
 
-            carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
-            text_message = 'Q: '+ q_text + '\nA: ' + a_text
-            contents = get_flex_contents(q_text, a_text)
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
-            line_bot_api.push_message(profile.user_id, carousel_template)
+    if event.message.text == "開始問答集":
 
-        elif event.message.text == "開始小測驗": 
-            r.set(profile.user_id, 'QUIZ')
-            r.set(f'QUIZ_state:{profile.user_id}', 1)
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
+        if r.exists(profile.user_id):
+            chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+            end_session(chat_mode, profile)
 
-            quiz_template, q_text = gen_QUIZ_template('1')
-            line_bot_api.reply_message(event.reply_token, quiz_template)
+        r.set(profile.user_id, 'QA')
+        r.set(f'QA_state:{profile.user_id}', 1)
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
 
-        elif event.message.text == "開始共享決策":
-            r.set(profile.user_id, 'SDM')
-            r.set(f'SDM_state:{profile.user_id}', 1)
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
-            
-            contents, q_text, a_text = gen_SDM_flex('1')
-            text_message = q_text + ' \n' + a_text
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+        carousel_template, q_text, a_text = gen_QA_carousel(r.get(f'QA_state:{profile.user_id}').decode('utf-8'))
+        text_message = 'Q: '+ q_text + '\nA: ' + a_text
+        contents = get_flex_contents(q_text, a_text)
+        line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+        line_bot_api.push_message(profile.user_id, carousel_template)
+        return
 
+    elif event.message.text == "開始小測驗": 
+        if r.exists(profile.user_id):
+            chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+            end_session(chat_mode, profile)
 
-        else:
-            buttons_template = get_main_buttons()
-            line_bot_api.reply_message(event.reply_token, buttons_template)
+        r.set(profile.user_id, 'QUIZ')
+        r.set(f'QUIZ_state:{profile.user_id}', 1)
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
 
-    elif event.message.text == "結束":
+        quiz_template, q_text = gen_QUIZ_template('1')
+        line_bot_api.reply_message(event.reply_token, quiz_template)
+        return
+
+    elif event.message.text == "開始共享決策":
+        if r.exists(profile.user_id):
+            chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
+            end_session(chat_mode, profile)
+
+        r.set(profile.user_id, 'SDM')
+        r.set(f'SDM_state:{profile.user_id}', 1)
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
+        
+        contents, q_text, a_text = gen_SDM_flex('1')
+        text_message = q_text + ' \n' + a_text
+        line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
+        return
+
+    elif r.exists(profile.user_id) and event.message.text == "結束":
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
-        if chat_mode == 'QA':
-            r.delete(f'QA_state:{profile.user_id}')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您瀏覽問答集！'))
-        elif chat_mode == 'SDM':
-            r.delete(f'SDM_state:{profile.user_id}')
-            if r.exists(f'SDM_ans:{profile.user_id}'):
-                r.delete(f'SDM_ans:{profile.user_id}')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與尿路逆流醫病共享決策！'))
-        elif chat_mode == 'QUIZ':
-            r.delete(f'QUIZ_state:{profile.user_id}')
-            if r.exists(f'QUIZ_ans:{profile.user_id}'):
-                r.delete(f'QUIZ_ans:{profile.user_id}')
-            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與小測驗！'))
-        r.delete(profile.user_id)
-        line_bot_api.push_message(profile.user_id, TextSendMessage(text='若尚有不清楚的問題，請主動向醫療人員說出您的疑慮或擔心的事情！'))
+        end_session(chat_mode, profile)
+        # if chat_mode == 'QA':
+        #     r.delete(f'QA_state:{profile.user_id}')
+        #     line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您瀏覽問答集！'))
+        # elif chat_mode == 'SDM':
+        #     r.delete(f'SDM_state:{profile.user_id}')
+        #     if r.exists(f'SDM_ans:{profile.user_id}'):
+        #         r.delete(f'SDM_ans:{profile.user_id}')
+        #     line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與尿路逆流醫病共享決策！'))
+        # elif chat_mode == 'QUIZ':
+        #     r.delete(f'QUIZ_state:{profile.user_id}')
+        #     if r.exists(f'QUIZ_ans:{profile.user_id}'):
+        #         r.delete(f'QUIZ_ans:{profile.user_id}')
+        #     line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與小測驗！'))
+        # r.delete(profile.user_id)
+        # line_bot_api.push_message(profile.user_id, TextSendMessage(text='若尚有不清楚的問題，請主動向醫療人員說出您的疑慮或擔心的事情！'))
         buttons_template = get_main_buttons()
         line_bot_api.reply_message(event.reply_token, buttons_template)
+        return
 
     elif r.exists(profile.user_id):
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
@@ -407,7 +439,9 @@ def handle_message(event):
                 reply = TextSendMessage(text= f"麻煩再選一次唷~")
                 line_bot_api.reply_message(event.reply_token, reply)
                 return
-    
+    else:
+        buttons_template = get_main_buttons()
+        line_bot_api.reply_message(event.reply_token, buttons_template)
     # if event.message.text.lower() == "98":
     #     if r.get(profile.user_id) is None:
     #         r.set(profile.user_id, 0)
@@ -523,9 +557,9 @@ def handle_message(event):
     #     )
     #     line_bot_api.reply_message(event.reply_token, carousel_template)    
     
-    else:
-        buttons_template = get_main_buttons()
-        line_bot_api.reply_message(event.reply_token, buttons_template)
+    # else:
+    #     buttons_template = get_main_buttons()
+    #     line_bot_api.reply_message(event.reply_token, buttons_template)
         # buttons_template = TemplateSendMessage(
         #     alt_text='請選擇功能^^',
         #     template=ButtonsTemplate(

@@ -201,7 +201,7 @@ def get_flex_contents(title, text):
            "type": "box",
            "layout": "vertical",
            "contents": [
-               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "結束", "text": "結束"}}
+               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "了解", "text": "了解"}}
            ]
        }
     }
@@ -351,7 +351,7 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
         return
 
-    elif r.exists(profile.user_id) and event.message.text == "結束":
+    elif r.exists(profile.user_id) and (event.message.text == "結束" or event.message.text == "了解"):
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
         end_session(chat_mode, profile)
         # if chat_mode == 'QA':

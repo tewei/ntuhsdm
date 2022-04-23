@@ -79,7 +79,7 @@ def gen_QA_message(state):
 
     if(p_id != '0'):
         message += '[9] 回到上個話題' + ' \n'
-    message += '[88] 結束本次對話' + ' '
+    message += '[88] 了解' + ' '
 
     return message, c_list, p_id
 
@@ -112,10 +112,10 @@ def gen_QA_carousel(state):
         for idx, child in enumerate(c_list):
             c_text = r.get(f'QA:{child.decode("utf-8")}:Q').decode('utf-8')
             # button_list.append([f'[{idx+1}] {c_text}', idx+1])
-            selection_list.append([f'{c_text}', ' ', '選擇', str(idx+1)])
+            selection_list.append([f'{c_text}', ' ', '前往查看', str(idx+1)])
 
     if(p_id != '0'):
-        selection_list.append(['回到上個話題', ' ', '選擇', '9'])
+        selection_list.append(['回到上個話題', ' ', '查看上個選單', '9'])
     
     carousel_template = gen_carousel(selection_list)
 
@@ -125,7 +125,7 @@ def gen_SDM_flex(state):
     q_text = r.get(f'SDM:{state}:Q').decode('utf-8')
     a_text = r.get(f'SDM:{state}:A').decode('utf-8')
     choices = [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '★'*i+'☆'*(5-i), "text": i}} for i in range(1,6)]
-    choices += [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": 'END CHAT'}} ]
+    choices += [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": '結束'}} ]
     contents = {
         "type": "bubble",
         "header": {
@@ -203,7 +203,7 @@ def get_flex_contents(title, text):
            "type": "box",
            "layout": "vertical",
            "contents": [
-               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "結束本次對話", "text": "END CHAT"}}
+               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "了解", "text": "結束"}}
            ]
        }
     }
@@ -218,15 +218,15 @@ def get_main_buttons():
             actions=[
                 MessageTemplateAction(
                     label='問答集',
-                    text='START QA'
+                    text='開始問答集'
                 ),
                 MessageTemplateAction(
                     label='共享決策',
-                    text='START SDM'
+                    text='開始共享決策'
                 ),
                 MessageTemplateAction(
                     label='小測驗',
-                    text='START QUIZ'
+                    text='開始小測驗'
                 )
             ]
         )
@@ -290,7 +290,7 @@ def handle_message(event):
     # get_message = event.message.text
 
     if r.get(profile.user_id) is None:
-        if event.message.text == "START QA":
+        if event.message.text == "開始問答集":
             r.set(profile.user_id, 'QA')
             r.set(f'QA_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎來到問答集!!!'))
@@ -301,7 +301,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, FlexSendMessage(text_message, contents))
             line_bot_api.push_message(profile.user_id, carousel_template)
 
-        elif event.message.text == "START QUIZ": 
+        elif event.message.text == "開始小測驗": 
             r.set(profile.user_id, 'QUIZ')
             r.set(f'QUIZ_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎挑戰小測驗!!!'))
@@ -309,7 +309,7 @@ def handle_message(event):
             quiz_template, q_text = gen_QUIZ_template('1')
             line_bot_api.reply_message(event.reply_token, quiz_template)
 
-        elif event.message.text == "START SDM":
+        elif event.message.text == "開始共享決策":
             r.set(profile.user_id, 'SDM')
             r.set(f'SDM_state:{profile.user_id}', 1)
             line_bot_api.push_message(profile.user_id, TextSendMessage(text='歡迎進行共享決策!!!'))
@@ -323,20 +323,23 @@ def handle_message(event):
             buttons_template = get_main_buttons()
             line_bot_api.reply_message(event.reply_token, buttons_template)
 
-    elif event.message.text == "END CHAT":
+    elif event.message.text == "結束":
         chat_mode = r.get(f'{profile.user_id}').decode('utf-8')
         if chat_mode == 'QA':
             r.delete(f'QA_state:{profile.user_id}')
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您瀏覽問答集！'))
         elif chat_mode == 'SDM':
             r.delete(f'SDM_state:{profile.user_id}')
             if r.exists(f'SDM_ans:{profile.user_id}'):
                 r.delete(f'SDM_ans:{profile.user_id}')
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與尿路逆流醫病共享決策！'))
         elif chat_mode == 'QUIZ':
             r.delete(f'QUIZ_state:{profile.user_id}')
             if r.exists(f'QUIZ_ans:{profile.user_id}'):
                 r.delete(f'QUIZ_ans:{profile.user_id}')
+            line_bot_api.push_message(profile.user_id, TextSendMessage(text='謝謝您參與小測驗！'))
         r.delete(profile.user_id)
-        line_bot_api.push_message(profile.user_id, TextSendMessage(text='再會~~~'))
+        line_bot_api.push_message(profile.user_id, TextSendMessage(text='若尚有不清楚的問題，請主動向醫療人員說出您的疑慮或擔心的事情！'))
         buttons_template = get_main_buttons()
         line_bot_api.reply_message(event.reply_token, buttons_template)
 

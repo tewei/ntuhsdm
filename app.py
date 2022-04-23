@@ -1,5 +1,3 @@
-# Last modified 2022/04/23
-
 import os
 from datetime import datetime
 import random

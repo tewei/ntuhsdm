@@ -138,7 +138,7 @@ def gen_SDM_flex(state):
         "body": {
             "type": "box",
             "layout": "vertical",
-            "contents": [ {"type": "text", "text": a_text, "wrap": True} ] + choices
+            "contents": [ {"type": "text", "text": a_text, "wrap": True} ]
         },
         "footer": {
             "type": "box",

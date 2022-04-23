@@ -124,7 +124,7 @@ def gen_QA_carousel(state):
 def gen_SDM_flex(state):
     q_text = r.get(f'SDM:{state}:Q').decode('utf-8')
     a_text = r.get(f'SDM:{state}:A').decode('utf-8')
-    choices = [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '★'*i+'☆'*(5-i), "text": i}} for i in range(1,6)]
+    choices = [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": str(i)+'顆星 '+'★'*i+'☆'*(5-i), "text": str(i)}} for i in range(1,6)]
     choices += [{"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": '結束 (不會計算結果)', "text": '結束'}} ]
     contents = {
         "type": "bubble",

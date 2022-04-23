@@ -203,7 +203,7 @@ def get_flex_contents(title, text):
            "type": "box",
            "layout": "vertical",
            "contents": [
-               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "了解", "text": "結束"}}
+               {"type": "button", "style": "link", "color": "#1DB446", "action": {"type": "message", "label": "結束", "text": "結束"}}
            ]
        }
     }
